@@ -9,8 +9,8 @@ export default defineConfig({
             registerType: 'autoUpdate',
             includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'mask-icon.svg'],
             manifest: {
-                name: 'DentalDash - Gestión Odontológica',
-                short_name: 'DentalDash',
+                name: 'Dental Dash - Gestión Odontológica',
+                short_name: 'Dental Dash',
                 description: 'Sistema de gestión para consultorios odontológicos.',
                 theme_color: '#ffffff',
                 icons: [
@@ -41,25 +41,40 @@ export default defineConfig({
         rollupOptions: {
             output: {
                 manualChunks(id: string) {
-                    // 1. Ecosistema de UI (Ant Design y sub-componentes)
-                    if (id.includes('node_modules/antd/') ||
+                    // 1. Ecosistema de UI (Ant Design + React)
+                    // Grouping these is CRITICAL to avoid "createContext of undefined"
+                    if (id.includes('node_modules/react/') ||
+                        id.includes('node_modules/react-dom/') ||
+                        id.includes('node_modules/react-router-dom/') ||
+                        id.includes('node_modules/antd/') ||
                         id.includes('node_modules/@ant-design/') ||
-                        id.includes('node_modules/rc-')) {
-                        return 'vendor-antd';
+                        id.includes('node_modules/rc-') ||
+                        id.includes('node_modules/scheduler/')) {
+                        return 'vendor-core';
                     }
 
-                    // 2. Base de Datos (Supabase)
-                    if (id.includes('node_modules/@supabase/')) {
-                        return 'vendor-supabase';
+                    // 2. Base de Datos & Auth (Supabase + TanStack)
+                    if (id.includes('node_modules/@supabase/') ||
+                        id.includes('node_modules/@tanstack/')) {
+                        return 'vendor-data';
                     }
 
-                    // 3. Iconos pesados
+                    // 3. Iconos
                     if (id.includes('node_modules/lucide-react/')) {
                         return 'vendor-icons';
                     }
 
-                    // ¡OJO! Eliminamos el "vendor-utils" y "vendor-core" estrictos.
-                    // Vite ahora armará el árbol de React automáticamente de forma segura.
+                    // 4. Formularios (Hook Form + Zod)
+                    if (id.includes('node_modules/react-hook-form/') ||
+                        id.includes('node_modules/@hookform/') ||
+                        id.includes('node_modules/zod/')) {
+                        return 'vendor-forms';
+                    }
+
+                    // 5. Misceláneos
+                    if (id.includes('node_modules/')) {
+                        return 'vendor-utils';
+                    }
                 },
             },
         },
