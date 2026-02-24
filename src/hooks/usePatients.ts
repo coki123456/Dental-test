@@ -22,8 +22,9 @@ export interface UsePatientsReturn {
     refreshPatients: () => void;
 }
 
-export function usePatients(_session: Session | null): UsePatientsReturn {
+export function usePatients(session: Session | null): UsePatientsReturn {
     const queryClient = useQueryClient();
+    const userId = session?.user?.id;
 
     // ── Fetch ──────────────────────────────────────────────────
     const query = useQuery({
@@ -43,7 +44,10 @@ export function usePatients(_session: Session | null): UsePatientsReturn {
 
     // ── Add mutation ──────────────────────────────────────────
     const addMutation = useMutation({
-        mutationFn: (data: PatientPayload) => PatientService.createPatient(data),
+        mutationFn: (data: PatientPayload) => {
+            if (!userId) throw new Error("No hay sesión activa para crear paciente");
+            return PatientService.createPatient(data, userId);
+        },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: PATIENTS_QUERY_KEY });
             window.dispatchEvent(new CustomEvent('patients:refresh'));
@@ -62,7 +66,10 @@ export function usePatients(_session: Session | null): UsePatientsReturn {
 
     // ── Update mutation ───────────────────────────────────────
     const updateMutation = useMutation({
-        mutationFn: (data: PatientPayload) => PatientService.updatePatient(data),
+        mutationFn: (data: PatientPayload) => {
+            if (!userId) throw new Error("No hay sesión activa para actualizar paciente");
+            return PatientService.updatePatient(data, userId);
+        },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: PATIENTS_QUERY_KEY });
             window.dispatchEvent(new CustomEvent('patients:refresh'));
