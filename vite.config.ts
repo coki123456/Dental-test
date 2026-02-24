@@ -9,8 +9,8 @@ export default defineConfig({
             registerType: 'autoUpdate',
             includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'mask-icon.svg'],
             manifest: {
-                name: 'Dental Dash - Gestión Odontológica',
-                short_name: 'Dental Dash',
+                name: 'Dental-test - Gestión Odontológica',
+                short_name: 'Dental-test',
                 description: 'Sistema de gestión para consultorios odontológicos.',
                 theme_color: '#ffffff',
                 icons: [

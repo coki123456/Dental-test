@@ -56,7 +56,7 @@ export default function LoginView({ onSuccess }: LoginViewProps) {
                 <div className="relative z-10 flex items-center gap-3">
                     <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center text-xl">🦷</div>
                     <div>
-                        <span className="text-white font-bold text-xl">Dental Dash</span>
+                        <span className="text-white font-bold text-xl">Dental-test</span>
                         <p className="text-teal-200 text-xs">by ChillDigital Agency</p>
                     </div>
                 </div>
@@ -95,7 +95,7 @@ export default function LoginView({ onSuccess }: LoginViewProps) {
                     {/* Logo mobile */}
                     <div className="flex lg:hidden items-center gap-2 mb-8 justify-center">
                         <div className="w-9 h-9 bg-teal-600 rounded-xl flex items-center justify-center text-lg">🦷</div>
-                        <span className="font-bold text-gray-900 text-xl">Dental Dash</span>
+                        <span className="font-bold text-gray-900 text-xl">Dental-test</span>
                     </div>
 
                     <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 space-y-6">
@@ -106,7 +106,7 @@ export default function LoginView({ onSuccess }: LoginViewProps) {
 
                         {/* Descripción breve (visible para Google bot) */}
                         <p className="text-sm text-gray-600 text-center leading-relaxed">
-                            <strong>Dental Dash</strong> es una plataforma SaaS de gestión odontológica que integra
+                            <strong>Dental-test</strong> es una plataforma SaaS de gestión odontológica que integra
                             agenda de turnos con Google Calendar y gestión de pacientes.
                         </p>
 
@@ -145,7 +145,7 @@ export default function LoginView({ onSuccess }: LoginViewProps) {
                             <Link to="/terms" className="text-teal-600 hover:underline font-medium">Términos del Servicio</Link>
                             {' '}y la{' '}
                             <Link to="/privacy" className="text-teal-600 hover:underline font-medium">Política de Privacidad</Link>
-                            {' '}de Dental Dash.
+                            {' '}de Dental-test.
                         </p>
                     </div>
 
@@ -157,7 +157,7 @@ export default function LoginView({ onSuccess }: LoginViewProps) {
                             <Link to="/terms" className="hover:text-teal-600 transition-colors">Términos del Servicio</Link>
                         </div>
                         <p className="text-[10px] text-gray-400">
-                            Dental Dash © 2026 · Powered by{' '}
+                            Dental-test © 2026 · Powered by{' '}
                             <a href="https://chilldigital.agency" target="_blank" rel="noreferrer" className="hover:text-teal-600">ChillDigital Agency</a>
                         </p>
                     </div>
