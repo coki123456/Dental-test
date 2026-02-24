@@ -1,10 +1,6 @@
 // src/hooks/usePatients.ts  — Etapa 2: TanStack Query
-import { useCallback } from 'react';
-import {
-    useQuery,
-    useMutation,
-    useQueryClient,
-} from '@tanstack/react-query';
+import { useState, useCallback } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { PatientService, mapDbPatient } from '../services/PatientService';
 import type { NormalizedPatient } from './useNormalizedPatients';
 import type { PatientPayload } from '../services/PatientService';
@@ -14,6 +10,9 @@ export const PATIENTS_QUERY_KEY = ['patients'] as const;
 
 export interface UsePatientsReturn {
     patients: NormalizedPatient[];
+    totalCount: number;
+    page: number;
+    setPage: (p: number) => void;
     loading: boolean;
     error: string | null;
     addPatient: (data: PatientPayload) => Promise<NormalizedPatient | null>;
@@ -22,16 +21,18 @@ export interface UsePatientsReturn {
     refreshPatients: () => void;
 }
 
-export function usePatients(session: Session | null): UsePatientsReturn {
+export function usePatients(session: Session | null, initialPageSize = 300): UsePatientsReturn {
     const queryClient = useQueryClient();
     const userId = session?.user?.id;
+    const [page, setPage] = useState(1);
+    const [pageSize] = useState(initialPageSize);
 
-    // ── Fetch ──────────────────────────────────────────────────
+    // ── Fetch con paginación ──────────────────────────────────────────────────
     const query = useQuery({
-        queryKey: PATIENTS_QUERY_KEY,
+        queryKey: [...PATIENTS_QUERY_KEY, page, pageSize],
         queryFn: async () => {
-            const raw = await PatientService.fetchAllPatients();
-            return raw.map(mapDbPatient);
+            const { data, count } = await PatientService.fetchPatientsPaginated(page, pageSize);
+            return { patients: data, count };
         },
         staleTime: 5 * 60 * 1000,
         retry: 1,
@@ -100,7 +101,10 @@ export function usePatients(session: Session | null): UsePatientsReturn {
     );
 
     return {
-        patients: (query.data as NormalizedPatient[]) ?? [],
+        patients: (query.data?.patients as NormalizedPatient[]) ?? [],
+        totalCount: query.data?.count ?? 0,
+        page,
+        setPage,
         loading: query.isLoading,
         error: query.error?.message ?? null,
         addPatient,

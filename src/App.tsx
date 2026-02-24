@@ -9,6 +9,7 @@ import LoginView from './components/LoginView';
 import AuthedApp from './components/AuthedApp';
 import PrivacyPolicy from './components/PrivacyPolicy';
 import TermsOfService from './components/TermsOfService';
+import OfflineIndicator from './components/OfflineIndicator';
 
 export default function App() {
     const [session, setSession] = React.useState<Session | null>(null);
@@ -88,6 +89,7 @@ export default function App() {
 
     return (
         <Router>
+            <OfflineIndicator />
             <Routes>
                 {/* Public Legal Routes */}
                 <Route path="/privacy" element={<PrivacyPolicy />} />

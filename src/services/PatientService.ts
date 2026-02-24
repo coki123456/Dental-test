@@ -1,6 +1,7 @@
 import { supabase } from '../config/supabaseClient';
 import { StorageService } from './StorageService';
 import type { PatientRow } from '../types/database.types';
+import { AddPatientSchema, UpdatePatientSchema } from '../schemas/patient.schema';
 
 /** Mapeo centralizado de fila DB → camelCase para la app. Exportado para reutilización en hooks. */
 export function mapDbPatient(p: PatientRow | any): any {
@@ -19,7 +20,6 @@ export function mapDbPatient(p: PatientRow | any): any {
 // Omitted type definitions for the internal payload mapping for brevity, but we use 'Partial<Patient>' heavily
 export interface PatientPayload {
   id?: string;
-  _id?: string;
   nombre?: string;
   dni?: string;
   telefono?: string;
@@ -33,7 +33,6 @@ export interface PatientPayload {
   estado?: string;
   historiaClinicaFile?: File;
   historiaClinica?: string | null;
-  historia_clinica_url?: string | null;
   createdTime?: string;
   user_id?: string;
 }
@@ -251,13 +250,19 @@ export class PatientService {
   static async createPatient(patientData: PatientPayload, userId: string): Promise<any> {
     let historiaClinicaPath: string | null = null;
     try {
+      // Validación estricta con Zod
+      AddPatientSchema.parse(patientData);
+
+      // Normalizar DNI
+      const cleanDni = patientData.dni ? String(patientData.dni).replace(/[.\s,\-]/g, '').trim() : undefined;
+
       if (patientData.historiaClinicaFile && userId) {
         historiaClinicaPath = await this.uploadClinicalRecord(patientData.historiaClinicaFile, userId);
       }
 
       const newPatient = {
         nombre: patientData.nombre,
-        dni: patientData.dni,
+        dni: cleanDni,
         telefono: patientData.telefono,
         email: patientData.email,
         obra_social: patientData.obraSocial,
@@ -306,12 +311,18 @@ export class PatientService {
   static async updatePatient(patientData: PatientPayload, userId: string): Promise<any> {
     let newlyUploadedPath: string | null = null;
     try {
-      const id = patientData.id || patientData._id;
+      const id = patientData.id;
       if (!id) throw new Error("Patient ID is required for update");
+
+      // Validación estricta con Zod
+      UpdatePatientSchema.parse(patientData);
+
+      // Normalizar DNI
+      const cleanDni = patientData.dni ? String(patientData.dni).replace(/[.\s,\-]/g, '').trim() : undefined;
 
       const updates: any = {
         nombre: patientData.nombre,
-        dni: patientData.dni,
+        dni: cleanDni,
         telefono: patientData.telefono,
         email: patientData.email,
         obra_social: patientData.obraSocial,
@@ -326,7 +337,7 @@ export class PatientService {
       if (patientData.historiaClinicaFile && userId) {
         newlyUploadedPath = await this.uploadClinicalRecord(patientData.historiaClinicaFile, userId);
         updates.historia_clinica_url = newlyUploadedPath;
-      } else if (patientData.historiaClinica === null || patientData.historia_clinica_url === null) {
+      } else if (patientData.historiaClinica === null) {
         updates.historia_clinica_url = null;
       }
 
