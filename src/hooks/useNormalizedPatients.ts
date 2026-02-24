@@ -1,0 +1,101 @@
+// src/hooks/useNormalizedPatients.ts
+import { useMemo } from 'react';
+
+export interface NormalizedPatient {
+    id: string;
+    nombre: string;
+    dni: string;
+    telefono: string;
+    obraSocial: string;
+    numeroAfiliado: string;
+    email: string;
+    direccion: string;
+    fechaNacimiento: string;
+    estado: string;
+    ultimaVisita: string;
+    proximoTurno: string;
+    alergias: string;
+    antecedentes: string;
+    notas: string;
+    historiaClinicaUrl: string;
+    fechaCreacion: string;
+    _createdAt: number;
+}
+
+function parseFechaToMs(raw: unknown): number {
+    if (!raw) return 0;
+    if (raw instanceof Date) return raw.getTime();
+    if (typeof raw === 'number') return raw;
+    if (typeof raw === 'string') {
+        const iso = Date.parse(raw);
+        if (!Number.isNaN(iso)) return iso;
+        const m = raw.match(
+            /^(\d{1,2})[/-](\d{1,2})[/-](\d{2,4})(?:\s+(\d{1,2}):(\d{2})(?::(\d{2}))?)?$/
+        );
+        if (m) {
+            const d = parseInt(m[1], 10);
+            const mo = parseInt(m[2], 10) - 1;
+            const y = parseInt(m[3].length === 2 ? `20${m[3]}` : m[3], 10);
+            const hh = m[4] ? parseInt(m[4], 10) : 0;
+            const mm = m[5] ? parseInt(m[5], 10) : 0;
+            const ss = m[6] ? parseInt(m[6], 10) : 0;
+            return new Date(y, mo, d, hh, mm, ss).getTime();
+        }
+    }
+    return 0;
+}
+
+function getField(obj: any, fieldNames: string[], defaultValue = ''): string {
+    for (const fieldName of fieldNames) {
+        let value = obj?.[fieldName] ?? obj?.fields?.[fieldName];
+        if (Array.isArray(value)) value = value[0];
+        if (value != null && value !== '') return String(value);
+    }
+    return defaultValue;
+}
+
+export function useNormalizedPatients(patients: any[]): {
+    normalizedPatients: NormalizedPatient[];
+    latestPatients: NormalizedPatient[];
+} {
+    const normalizedPatients = useMemo<NormalizedPatient[]>(() => {
+        const list = Array.isArray(patients) ? patients : [];
+
+        return list
+            .map((p): NormalizedPatient => {
+                const dniValue = getField(p, ['dni', 'DNI', 'Dni']);
+                return {
+                    id: p?.id || p?._id || dniValue || '',
+                    nombre: getField(p, ['nombre', 'name'], 'Sin nombre'),
+                    dni: dniValue,
+                    telefono: getField(p, ['telefono', 'phone', 'Telefono']),
+                    obraSocial: getField(p, ['obraSocial', 'obra_social', 'ObraSocial', 'Obra Social']),
+                    numeroAfiliado: getField(p, ['numeroAfiliado', 'Numero Afiliado', 'numero_afiliado', 'numeroafiliado']),
+                    email: getField(p, ['email', 'Email', 'correo']),
+                    direccion: getField(p, ['direccion', 'Direccion', 'address']),
+                    fechaNacimiento: getField(p, ['fechaNacimiento', 'Fecha Nacimiento', 'birthDate', 'fecha_nacimiento']),
+                    estado: getField(p, ['estado', 'Estado', 'status'], 'Activo'),
+                    ultimaVisita: getField(p, ['ultimaVisita', 'Ultima Visita', 'lastVisit', 'ultima_visita'], '-'),
+                    proximoTurno: getField(p, ['proximoTurno', 'Proximo Turno', 'nextAppointment'], '-'),
+                    alergias: getField(p, ['alergias', 'alergia', 'Alergia', 'allergies'], 'Ninguna'),
+                    antecedentes: getField(p, ['antecedentes', 'Antecedentes', 'medicalHistory'], 'Ninguno'),
+                    notas: getField(p, ['notas', 'Notas', 'notes']),
+                    historiaClinicaUrl: getField(p, ['historiaClinicaUrl', 'historia_clinica', 'Historia Clinica', 'historiaClinica', 'historia_clinica_url']),
+                    fechaCreacion: getField(
+                        p,
+                        ['fechaCreacion', 'Fecha Creacion', 'createdAt', 'createdTime', 'created_at'],
+                        new Date().toISOString().slice(0, 10)
+                    ),
+                    _createdAt: parseFechaToMs(p?._createdAt || p?.createdTime || p?.fechaCreacion || p?.created_at || Date.now()),
+                };
+            })
+            .sort((a, b) => b._createdAt - a._createdAt);
+    }, [patients]);
+
+    const latestPatients = useMemo(
+        () => normalizedPatients.slice(0, 4),
+        [normalizedPatients]
+    );
+
+    return { normalizedPatients, latestPatients };
+}

@@ -1,0 +1,74 @@
+// src/components/InsuranceAutocomplete.tsx
+import React, { useState, useEffect, useRef } from 'react';
+import { Building2, Check, Search, X } from 'lucide-react';
+import { PatientService } from '../services/PatientService';
+
+interface InsuranceAutocompleteProps {
+    value: string;
+    onChange: (e: React.ChangeEvent<HTMLInputElement> | { target: { name: string; value: string } }) => void;
+    disabled?: boolean;
+    placeholder?: string;
+}
+
+export default function InsuranceAutocomplete({ value, onChange, disabled, placeholder }: InsuranceAutocompleteProps) {
+    const [suggestions, setSuggestions] = useState<string[]>([]);
+    const [filtered, setFiltered] = useState<string[]>([]);
+    const [showDropdown, setShowDropdown] = useState(false);
+    const [loading, setLoading] = useState(false);
+    const dropdownRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        setLoading(true);
+        PatientService.getAllUniqueInsurances()
+            .then(setSuggestions)
+            .catch(() => { })
+            .finally(() => setLoading(false));
+    }, []);
+
+    useEffect(() => {
+        if (showDropdown) {
+            setFiltered(value
+                ? suggestions.filter(item => item.toLowerCase().includes(value.toLowerCase()) && item.toLowerCase() !== value.toLowerCase())
+                : suggestions
+            );
+        }
+    }, [value, suggestions, showDropdown]);
+
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) setShowDropdown(false);
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    const handleSelect = (item: string) => { onChange({ target: { name: 'obraSocial', value: item } }); setShowDropdown(false); };
+    const handleClear = () => { onChange({ target: { name: 'obraSocial', value: '' } }); setShowDropdown(false); };
+
+    return (
+        <div className="relative" ref={dropdownRef}>
+            <label className="flex items-center text-sm font-medium text-gray-700 mb-1"><Building2 size={16} className="mr-2 text-gray-500" />Obra Social</label>
+            <div className="relative">
+                <input name="obraSocial" type="text" value={value} onChange={e => { onChange(e); setShowDropdown(true); }} onFocus={() => setShowDropdown(true)}
+                    placeholder={placeholder || 'OSDE, Swiss Medical, etc.'}
+                    className="w-full rounded-xl border border-transparent bg-[#F5F5F5] px-3 py-2 pr-10 text-sm focus:outline-none" disabled={disabled} autoComplete="off" />
+                <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                    {value && !disabled && <button type="button" onClick={handleClear} className="p-1 text-gray-400 hover:text-gray-600 rounded-full"><X size={14} /></button>}
+                    <Search size={16} className="text-gray-400" />
+                </div>
+            </div>
+            {showDropdown && !disabled && (filtered.length > 0 || loading) && (
+                <div className="absolute z-[60] mt-1 w-full bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden">
+                    <div className="max-h-48 overflow-y-auto">
+                        {loading ? <div className="p-3 text-xs text-center text-gray-500 italic">Buscando...</div> : filtered.map((item, i) => (
+                            <button key={i} type="button" onClick={() => handleSelect(item)} className="w-full flex items-center justify-between px-4 py-2.5 text-sm text-gray-700 hover:bg-teal-50 hover:text-teal-700 text-left">
+                                <span>{item}</span>
+                                {value === item && <Check size={14} className="text-teal-600" />}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+}

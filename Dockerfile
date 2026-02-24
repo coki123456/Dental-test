@@ -1,38 +1,35 @@
 # Build Stage
-FROM node:18-alpine as build
+FROM node:18-alpine AS builder
 
 WORKDIR /app
 
-# Install Dependencies
+# Install dependencies first (better layer caching)
 COPY package*.json ./
-RUN npm ci
+RUN npm ci --ignore-scripts
 
-# Copy Source
+# Copy source files
 COPY . .
 
-# Build Arguments (Require these when building so Vite can bake them in)
+# Build Arguments — baked in at build time by Vite
 ARG VITE_SUPABASE_URL
 ARG VITE_SUPABASE_ANON_KEY
-ARG REACT_APP_SUPABASE_URL
-ARG REACT_APP_SUPABASE_ANON_KEY
 
-# Map the VITE_ args or fallback directly to the REACT args temporarily 
-# incase the Github Actions CI wasn't fully updated yet.
-ENV VITE_SUPABASE_URL=${VITE_SUPABASE_URL:-$REACT_APP_SUPABASE_URL}
-ENV VITE_SUPABASE_ANON_KEY=${VITE_SUPABASE_ANON_KEY:-$REACT_APP_SUPABASE_ANON_KEY}
-ENV REACT_APP_SUPABASE_URL=$REACT_APP_SUPABASE_URL
-ENV REACT_APP_SUPABASE_ANON_KEY=$REACT_APP_SUPABASE_ANON_KEY
+ENV VITE_SUPABASE_URL=${VITE_SUPABASE_URL}
+ENV VITE_SUPABASE_ANON_KEY=${VITE_SUPABASE_ANON_KEY}
 
-# Build the app
+# Build the Vite app
 RUN npm run build
 
-# Serve Stage
-FROM nginx:alpine
+# Serve Stage — lightweight nginx image
+FROM nginx:alpine AS runner
 
-# Copy build artifacts
-COPY --from=build /app/dist /usr/share/nginx/html
+# Remove default nginx page
+RUN rm -rf /usr/share/nginx/html/*
 
-# Copy custom nginx config
+# Copy built assets from builder
+COPY --from=builder /app/dist /usr/share/nginx/html
+
+# Copy custom nginx config (handles SPA routing)
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
 EXPOSE 80

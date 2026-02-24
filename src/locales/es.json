@@ -1,0 +1,70 @@
+{
+    "nav": {
+        "dashboard": "Dashboard",
+        "turnos": "Turnos",
+        "pacientes": "Pacientes",
+        "configuracion": "Configuración",
+        "cerrarSesion": "Cerrar Sesión"
+    },
+    "common": {
+        "guardar": "Guardar",
+        "cancelar": "Cancelar",
+        "eliminar": "Eliminar",
+        "editar": "Editar",
+        "agregar": "Agregar",
+        "buscar": "Buscar",
+        "reintentar": "Reintentar",
+        "cargando": "Cargando...",
+        "sin_datos": "Sin datos",
+        "error": "Error",
+        "exito": "¡Éxito!"
+    },
+    "pacientes": {
+        "titulo": "Pacientes",
+        "agregar": "Agregar Paciente",
+        "nombre": "Nombre",
+        "dni": "DNI",
+        "telefono": "Teléfono",
+        "email": "Email",
+        "obra_social": "Obra Social",
+        "numero_afiliado": "N° Afiliado",
+        "fecha_nacimiento": "Fecha de Nacimiento",
+        "alergias": "Alergias",
+        "antecedentes": "Antecedentes",
+        "notas": "Notas",
+        "estado": "Estado",
+        "activo": "Activo",
+        "inactivo": "Inactivo",
+        "ultima_visita": "Última Visita",
+        "historia_clinica": "Historia Clínica",
+        "sin_pacientes": "No se encontraron pacientes",
+        "error_carga": "Error cargando pacientes"
+    },
+    "turnos": {
+        "titulo": "Turnos",
+        "nuevo": "Nuevo Turno",
+        "fecha": "Fecha",
+        "hora": "Hora",
+        "duracion": "Duración",
+        "tipo": "Tipo de consulta",
+        "notas": "Notas",
+        "estado": {
+            "pending": "Pendiente",
+            "confirmed": "Confirmado",
+            "cancelled": "Cancelado",
+            "completed": "Completado"
+        },
+        "sin_turnos": "No hay turnos en este periodo"
+    },
+    "header": {
+        "mi_configuracion": "Mi Configuración",
+        "cerrar_sesion": "Cerrar Sesión",
+        "rol_odontologo": "Odontólogo"
+    },
+    "errors": {
+        "no_session": "Sesión expirada, por favor vuelva a iniciar sesión",
+        "load_fail": "No se pudieron cargar los datos",
+        "save_fail": "No se pudieron guardar los cambios",
+        "delete_fail": "No se pudo eliminar el registro"
+    }
+}

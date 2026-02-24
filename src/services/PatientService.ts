@@ -1,6 +1,20 @@
 import { supabase } from '../config/supabaseClient';
 import { StorageService } from './StorageService';
-import { Patient } from '../types/database.types';
+import type { PatientRow } from '../types/database.types';
+
+/** Mapeo centralizado de fila DB → camelCase para la app. Exportado para reutilización en hooks. */
+export function mapDbPatient(p: PatientRow | any): any {
+  return {
+    ...p,
+    id: p.id,
+    obraSocial: p.obra_social,
+    numeroAfiliado: p.numero_afiliado,
+    fechaNacimiento: p.fecha_nacimiento,
+    historiaClinica: p.historia_clinica_url || p.historia_clinica,
+    ultimaVisita: p.ultima_visita,
+    estado: p.estado || 'Activo',
+  };
+}
 
 // Omitted type definitions for the internal payload mapping for brevity, but we use 'Partial<Patient>' heavily
 export interface PatientPayload {
@@ -20,6 +34,8 @@ export interface PatientPayload {
   historiaClinicaFile?: File;
   historiaClinica?: string | null;
   historia_clinica_url?: string | null;
+  createdTime?: string;
+  user_id?: string;
 }
 
 /**
@@ -40,8 +56,44 @@ export interface ClinicalRecord {
 export class PatientService {
 
   /**
-   * Obtener todos los pacientes
-   * @returns {Promise<any[]>} Lista de pacientes
+   * Helper centralizado para mapear filas de DB al tipo camelCase usado en la app.
+   * Evita la duplicación del mapeo que existía en todos los métodos.
+   */
+  /** Re-usa la función libre exportada para mantener compatibilidad interna. */
+  private static mapDbPatient = mapDbPatient;
+
+  /**
+   * Obtener todos los pacientes con paginación real (server-side).
+   * Usa .range() en lugar de .limit(300) para soportar miles de registros.
+   */
+  static async fetchPatientsPaginated(
+    page: number = 1,
+    pageSize: number = 50
+  ): Promise<{ data: any[]; count: number }> {
+    try {
+      const from = (page - 1) * pageSize;
+      const to = from + pageSize - 1;
+
+      const { data, error, count } = await supabase
+        .from('patients')
+        .select('*', { count: 'exact' })
+        .order('created_at', { ascending: false })
+        .range(from, to);
+
+      if (error) throw error;
+
+      return {
+        data: (data || []).map(this.mapDbPatient),
+        count: count ?? 0,
+      };
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  /**
+   * Obtener todos los pacientes (límite 300 — para compatibilidad y búsqueda textual).
+   * Para listados paginados usar fetchPatientsPaginated().
    */
   static async fetchAllPatients(): Promise<any[]> {
     try {
@@ -53,17 +105,10 @@ export class PatientService {
 
       if (error) throw error;
 
-      return (data || []).map((p: any) => ({
-        ...p,
-        obraSocial: p.obra_social,
-        numeroAfiliado: p.numero_afiliado,
-        fechaNacimiento: p.fecha_nacimiento,
-        historiaClinica: p.historia_clinica_url || p.historia_clinica,
-        ultimaVisita: p.ultima_visita,
-        estado: p.estado || 'Activo',
-      }));
+      return (data || []).map(this.mapDbPatient);
     } catch (error) {
       throw error;
+
     }
   }
 
