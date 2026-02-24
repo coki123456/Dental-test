@@ -40,7 +40,7 @@ export default defineConfig({
                         },
                     },
                     {
-                        urlPattern: /\.(?:png|jpg|jpeg|svg|gif)$/,
+                        urlPattern: /\.(?:png|jpg|jpeg|svg|gif|webp)$/,
                         handler: 'CacheFirst',
                         options: {
                             cacheName: 'image-cache',
@@ -53,20 +53,91 @@ export default defineConfig({
             },
         }),
     ],
+
     server: {
         port: 3000,
-        open: true
+        open: true,
     },
+
     esbuild: {
         loader: 'tsx',
         include: /src\/.*\.[tj]sx?$/,
-        exclude: []
+        exclude: [],
     },
+
     optimizeDeps: {
         esbuildOptions: {
             loader: {
-                '.js': 'tsx'
-            }
-        }
-    }
+                '.js': 'tsx',
+            },
+        },
+    },
+
+    build: {
+        // Raise the warning threshold — our vendor chunks are intentionally large
+        chunkSizeWarningLimit: 600,
+
+        rollupOptions: {
+            output: {
+                /**
+                 * Manual Chunk Splitting Strategy
+                 *
+                 * Goal: separate heavy dependencies into their own chunks so
+                 * that a code-only change doesn't bust the vendor cache.
+                 *
+                 * Browsers can load multiple smaller files in parallel (HTTP/2),
+                 * meaning this is always faster than one giant bundle.
+                 */
+                manualChunks(id: string) {
+                    // ── React core ──────────────────────────────────────────
+                    if (id.includes('node_modules/react/') ||
+                        id.includes('node_modules/react-dom/') ||
+                        id.includes('node_modules/react-router-dom/') ||
+                        id.includes('node_modules/scheduler/')) {
+                        return 'vendor-react';
+                    }
+
+                    // ── Supabase SDK ────────────────────────────────────────
+                    if (id.includes('node_modules/@supabase/')) {
+                        return 'vendor-supabase';
+                    }
+
+                    // ── Ant Design UI ───────────────────────────────────────
+                    if (id.includes('node_modules/antd/') ||
+                        id.includes('node_modules/@ant-design/') ||
+                        id.includes('node_modules/rc-')) {
+                        return 'vendor-antd';
+                    }
+
+                    // ── Lucide icons ────────────────────────────────────────
+                    if (id.includes('node_modules/lucide-react/')) {
+                        return 'vendor-icons';
+                    }
+
+                    // ── TanStack Query ──────────────────────────────────────
+                    if (id.includes('node_modules/@tanstack/')) {
+                        return 'vendor-query';
+                    }
+
+                    // ── Form / Validation ───────────────────────────────────
+                    if (id.includes('node_modules/react-hook-form/') ||
+                        id.includes('node_modules/@hookform/') ||
+                        id.includes('node_modules/zod/')) {
+                        return 'vendor-forms';
+                    }
+
+                    // ── i18n / Misc utilities ───────────────────────────────
+                    if (id.includes('node_modules/i18next') ||
+                        id.includes('node_modules/react-i18next')) {
+                        return 'vendor-i18n';
+                    }
+
+                    // Everything else in node_modules → generic vendor chunk
+                    if (id.includes('node_modules/')) {
+                        return 'vendor-misc';
+                    }
+                },
+            },
+        },
+    },
 });
