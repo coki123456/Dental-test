@@ -1,7 +1,6 @@
 // src/components/ModalsRoot.tsx
 import React from 'react';
 import { useModals } from '../hooks/useModals';
-import type { Session } from '@supabase/supabase-js';
 
 import PatientProfileModal from './PatientProfileModal';
 import EditPatientModal from './EditPatientModal';
@@ -11,14 +10,10 @@ import BookingModal from './BookingModal';
 import TurnoDetailsModal from './TurnoDetailsModal';
 import EditTurnoModal from './EditTurnoModal';
 
-interface ModalsRootProps {
-    patientsLoading?: boolean;
-    onDeletePatient: (patient: any) => Promise<void>;
-    session: Session | null;
-}
-
-export default function ModalsRoot({ patientsLoading = false, onDeletePatient, session }: ModalsRootProps) {
+// No external props needed — everything comes from the ModalsContext
+export default function ModalsRoot() {
     const {
+        session,
         selectedPatient,
         showProfileModal,
         showEditModal,
@@ -27,8 +22,8 @@ export default function ModalsRoot({ patientsLoading = false, onDeletePatient, s
         closeProfile,
         onEditFromProfile,
         onViewPatient,
-        onSavedPatient,
         onCreatedPatient,
+        onDeletePatient,
 
         selectedTurno,
         showBookingModal,
@@ -65,7 +60,6 @@ export default function ModalsRoot({ patientsLoading = false, onDeletePatient, s
                 open={showEditModal}
                 patient={selectedPatient}
                 onClose={closeEditPatient}
-                onSaved={onSavedPatient}
                 onBack={() => {
                     closeEditPatient();
                     if (selectedPatient) onViewPatient(selectedPatient);

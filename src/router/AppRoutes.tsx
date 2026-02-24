@@ -11,7 +11,6 @@ import OdontogramView from '../components/OdontogramView';
 
 import { useModals } from '../hooks/useModals';
 import { ProtectedRoute } from './ProtectedRoute';
-import { PatientService } from '../services/PatientService';
 
 interface AppRoutesProps {
     normalizedPatients?: any[];
@@ -21,7 +20,7 @@ interface AppRoutesProps {
 }
 
 export default function AppRoutes({ normalizedPatients = [], loading = false, refreshPatients, session }: AppRoutesProps) {
-    const { openAddPatient, onViewPatient, onOpenRecord, openBookingModal, onViewTurno } = useModals();
+    const { openAddPatient, onViewPatient, onOpenRecord, openBookingModal, onViewTurno, onDeletePatient } = useModals();
 
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState('Todos');
@@ -38,71 +37,74 @@ export default function AppRoutes({ normalizedPatients = [], loading = false, re
 
     const latestPatients = useMemo(() => patientsForViews.filter(p => p?.estado !== 'Inactivo').slice(0, 4), [patientsForViews]);
 
+    // Wraps context onDeletePatient with optimistic local deletion
     const handleDeletePatient = useCallback(async (patientData: any) => {
+        const id = typeof patientData === 'string' ? patientData : (patientData?.id || patientData?._id);
+        if (!id) throw new Error('No se pudo identificar el paciente (falta ID)');
         try {
-            const patient = typeof patientData === 'string'
-                ? patientsForViews.find(p => p?.id === patientData || p?._id === patientData || p?.dni === patientData)
-                : patientData;
-
-            if (!patient) throw new Error('No se pudo encontrar el paciente');
-            const id = patient?.id || patient?._id;
-            if (!id) throw new Error('No se pudo identificar el paciente (falta ID)');
-
             setLocallyDeleted(prev => [...prev, id]);
-            await PatientService.deletePatient(id);
+            await onDeletePatient(patientData);
             await refreshPatients?.();
             setLocallyDeleted(prev => prev.filter(k => k !== id));
         } catch (err) {
-            const id = typeof patientData === 'string' ? patientData : (patientData?.id || patientData?._id);
-            if (id) setLocallyDeleted(prev => prev.filter(k => k !== id));
+            setLocallyDeleted(prev => prev.filter(k => k !== id));
             throw err;
         }
-    }, [refreshPatients, patientsForViews]);
+    }, [onDeletePatient, refreshPatients]);
 
     return (
         <Routes>
-            <Route path="/" element={(
-                <DashboardView
-                    dashboardSearchTerm={dashboardSearchTerm}
-                    setDashboardSearchTerm={setDashboardSearchTerm}
-                    statusFilter={dashboardStatusFilter}
-                    setStatusFilter={setDashboardStatusFilter}
-                    onAddPatient={openAddPatient}
-                    onViewPatient={onViewPatient}
-                    onOpenRecord={onOpenRecord}
-                    onOpenBooking={openBookingModal}
-                    onViewTurno={onViewTurno}
-                    patients={patientsForViews}
-                    latestPatients={latestPatients}
-                    loading={loading}
-                />
-            )} />
-            <Route path="/turnos" element={<TurnosView onOpenBooking={openBookingModal} onViewTurno={onViewTurno} />} />
-            <Route path="/pacientes" element={(
-                <PacientesView
-                    searchTerm={searchTerm}
-                    setSearchTerm={setSearchTerm}
-                    statusFilter={statusFilter}
-                    setStatusFilter={setStatusFilter}
-                    onAddPatient={openAddPatient}
-                    onViewPatient={onViewPatient}
-                    onOpenRecord={onOpenRecord}
-                    patients={patientsForViews}
-                    loading={loading}
-                    onDeletePatient={handleDeletePatient}
-                />
-            )} />
+            {/* All internal routes are wrapped in ProtectedRoute */}
+            <Route path="/" element={
+                <ProtectedRoute session={session}>
+                    <DashboardView
+                        dashboardSearchTerm={dashboardSearchTerm}
+                        setDashboardSearchTerm={setDashboardSearchTerm}
+                        statusFilter={dashboardStatusFilter}
+                        setStatusFilter={setDashboardStatusFilter}
+                        onAddPatient={openAddPatient}
+                        onViewPatient={onViewPatient}
+                        onOpenRecord={onOpenRecord}
+                        onOpenBooking={openBookingModal}
+                        onViewTurno={onViewTurno}
+                        patients={patientsForViews}
+                        latestPatients={latestPatients}
+                        loading={loading}
+                    />
+                </ProtectedRoute>
+            } />
+            <Route path="/turnos" element={
+                <ProtectedRoute session={session}>
+                    <TurnosView onOpenBooking={openBookingModal} onViewTurno={onViewTurno} />
+                </ProtectedRoute>
+            } />
+            <Route path="/pacientes" element={
+                <ProtectedRoute session={session}>
+                    <PacientesView
+                        searchTerm={searchTerm}
+                        setSearchTerm={setSearchTerm}
+                        statusFilter={statusFilter}
+                        setStatusFilter={setStatusFilter}
+                        onAddPatient={openAddPatient}
+                        onViewPatient={onViewPatient}
+                        onOpenRecord={onOpenRecord}
+                        patients={patientsForViews}
+                        loading={loading}
+                        onDeletePatient={handleDeletePatient}
+                    />
+                </ProtectedRoute>
+            } />
             <Route path="/configuracion" element={
                 <ProtectedRoute session={session}>
                     <SettingsView session={session} />
                 </ProtectedRoute>
             } />
-            <Route path="/update-password" element={<Navigate to="/" />} />
             <Route path="/pacientes/:id/odontograma" element={
                 <ProtectedRoute session={session}>
                     <OdontogramView />
                 </ProtectedRoute>
             } />
+            <Route path="/update-password" element={<Navigate to="/" />} />
             <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
     );

@@ -28,7 +28,7 @@ export const AddPatientSchema = z.object({
 });
 
 export const UpdatePatientSchema = AddPatientSchema.extend({
-    id: z.string().uuid('El ID de paciente debe ser un UUID válido'),
+    id: z.string().uuid('El ID de paciente debe ser un UUID válido').optional(),
 }).partial({ dni: true });
 
 export type AddPatientInput = z.infer<typeof AddPatientSchema>;

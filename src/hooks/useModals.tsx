@@ -1,11 +1,15 @@
 import React, { createContext, useContext, useCallback, useMemo, useState } from 'react';
 import { AppointmentService } from '../services/AppointmentService';
+import { PatientService } from '../services/PatientService';
 import type { NormalizedPatient } from './useNormalizedPatients';
 import type { NormalizedAppointment } from '../services/AppointmentService';
 import type { PatientPayload } from '../services/PatientService';
+import type { Session } from '@supabase/supabase-js';
 
 // ─── Context type ────────────────────────────────────────────
 interface ModalsContextValue {
+    // Session (for ClinicalRecordModal and other session-aware modals)
+    session: Session | null;
     // Patient state
     selectedPatient: (NormalizedPatient & { historiaUrl?: string }) | null;
     showProfileModal: boolean;
@@ -28,6 +32,7 @@ interface ModalsContextValue {
     closeRecordModal: () => void;
     onSavedPatient: (data: PatientPayload) => Promise<void>;
     onCreatedPatient: (data: PatientPayload) => Promise<any>;
+    onDeletePatient: (patient: any) => Promise<void>;
     // Turno actions
     openBookingModal: () => void;
     closeBookingModal: () => void;
@@ -43,6 +48,7 @@ interface ModalsContextValue {
 
 interface ModalsProviderProps {
     children: React.ReactNode;
+    session?: Session | null;
     patients?: NormalizedPatient[];
     turnos?: NormalizedAppointment[];
     addPatient?: (data: PatientPayload) => Promise<any>;
@@ -56,6 +62,7 @@ const ModalsContext = createContext<ModalsContextValue | null>(null);
 
 export function ModalsProvider({
     children,
+    session = null,
     patients = [],
     turnos = [],
     addPatient,
@@ -206,6 +213,22 @@ export function ModalsProvider({
         }
     }, [addPatient, refreshPatients]);
 
+    // ── Delete patient (centralized, no more prop drilling) ───
+    const onDeletePatient = useCallback(async (patientData: any) => {
+        const id = typeof patientData === 'string' ? patientData : (patientData?.id || patientData?._id);
+        if (!id) throw new Error('No se pudo identificar el paciente (falta ID)');
+        try {
+            await PatientService.deletePatient(id);
+            refreshPatients?.();
+            window.dispatchEvent(new CustomEvent('patients:refresh'));
+            // If this patient was selected, close their profile
+            setShowProfileModal(false);
+            setSelectedPatient(null);
+        } catch (err: any) {
+            throw new Error(err.message || 'No se pudo eliminar el paciente');
+        }
+    }, [refreshPatients]);
+
     // ── Sync selectedPatient when list updates ────────────────
     React.useEffect(() => {
         if (selectedPatient && Array.isArray(patients)) {
@@ -240,22 +263,24 @@ export function ModalsProvider({
     // ── Memoized context value ────────────────────────────────
     const value = useMemo<ModalsContextValue>(
         () => ({
+            session,
             selectedPatient, showProfileModal, showEditModal, showAddModal, showRecordModal,
             selectedTurno, showBookingModal, showTurnoDetailsModal, showEditTurnoModal,
             closeProfile, onViewPatient, onEditFromProfile,
             openAddPatient, closeAddPatient, closeEditPatient,
-            onOpenRecord, closeRecordModal, onSavedPatient, onCreatedPatient,
+            onOpenRecord, closeRecordModal, onSavedPatient, onCreatedPatient, onDeletePatient,
             openBookingModal, closeBookingModal,
             onViewTurno, onEditTurnoFromDetails, onDeleteTurnoFromDetails,
             closeTurnoDetails, closeEditTurno,
             onBookingSuccess, onTurnoSaved, onTurnoDeleted,
         }),
         [
+            session,
             selectedPatient, showProfileModal, showEditModal, showAddModal, showRecordModal,
             selectedTurno, showBookingModal, showTurnoDetailsModal, showEditTurnoModal,
             closeProfile, onViewPatient, onEditFromProfile,
             openAddPatient, closeAddPatient, closeEditPatient,
-            onOpenRecord, closeRecordModal, onSavedPatient, onCreatedPatient,
+            onOpenRecord, closeRecordModal, onSavedPatient, onCreatedPatient, onDeletePatient,
             openBookingModal, closeBookingModal,
             onViewTurno, onEditTurnoFromDetails, onDeleteTurnoFromDetails,
             closeTurnoDetails, closeEditTurno,

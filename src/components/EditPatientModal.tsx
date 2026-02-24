@@ -5,16 +5,18 @@ import { message } from 'antd';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { UpdatePatientSchema, type UpdatePatientInput } from '../schemas/patient.schema';
+import { useModals } from '../hooks/useModals';
 
 interface EditPatientModalProps {
     open: boolean;
     patient: any;
     onClose: () => void;
-    onSaved?: (data: any) => Promise<void>;
     onBack?: () => void;
 }
 
-export default function EditPatientModal({ open, patient, onClose, onSaved, onBack }: EditPatientModalProps) {
+export default function EditPatientModal({ open, patient, onClose, onBack }: EditPatientModalProps) {
+    const { onSavedPatient } = useModals();
+
     const fileInputRef = useRef<HTMLInputElement>(null);
     const attachBtnRef = useRef<HTMLButtonElement>(null);
 
@@ -41,7 +43,6 @@ export default function EditPatientModal({ open, patient, onClose, onSaved, onBa
         if (open && patient) {
             const getValue = (val: any) => Array.isArray(val) ? val[0] || '' : val || '';
 
-            // Set default values for the form
             reset({
                 nombre: getValue(patient?.nombre),
                 dni: getValue(patient?.dni),
@@ -71,7 +72,7 @@ export default function EditPatientModal({ open, patient, onClose, onSaved, onBa
     const handleClearFile = () => {
         if (fileInputRef.current) fileInputRef.current.value = '';
         setHistoriaClinicaFile(null);
-        setShouldRemoveRecord(true); // Indica que queremos borrar el archivo existente
+        setShouldRemoveRecord(true);
     };
 
     const onSubmit = async (data: UpdatePatientInput) => {
@@ -91,9 +92,9 @@ export default function EditPatientModal({ open, patient, onClose, onSaved, onBa
                 updatedPatientData.historia_clinica_url = null;
             }
 
-            await onSaved?.(updatedPatientData);
+            // Consume directly from context — no prop drilling needed
+            await onSavedPatient(updatedPatientData);
             message.success('Paciente actualizado correctamente');
-            setTimeout(onClose, 900);
         } catch (err: any) {
             const msg = err.message || 'Error actualizando el paciente';
             setGlobalError(msg);

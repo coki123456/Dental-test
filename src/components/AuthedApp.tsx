@@ -1,5 +1,5 @@
 // src/components/AuthedApp.tsx
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useCallback, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 
 import Sidebar from './Sidebar';
@@ -12,7 +12,6 @@ import { useTurnos } from '../hooks/useTurnos';
 import { ModalsProvider } from '../hooks/useModals';
 import { useNormalizedPatients } from '../hooks/useNormalizedPatients';
 
-import { PatientService } from '../services/PatientService';
 import { AppointmentService } from '../services/AppointmentService';
 
 import type { Session } from '@supabase/supabase-js';
@@ -34,9 +33,9 @@ const titleByPath = (pathname: string): string => {
 export default function AuthedApp({ onLogout, justLoggedIn, onConsumedLogin, session }: AuthedAppProps) {
     const location = useLocation();
     const navigate = useNavigate();
-    const [sidebarOpen, setSidebarOpen] = useState(false);
+    const [sidebarOpen, setSidebarOpen] = React.useState(false);
 
-    // Navegar a home después del login
+    // Navigate to home after login
     useEffect(() => {
         if (justLoggedIn) {
             navigate('/', { replace: true });
@@ -70,27 +69,11 @@ export default function AuthedApp({ onLogout, justLoggedIn, onConsumedLogin, ses
     const { turnos, refreshTurnos } = useTurnos(null, null, session);
     const { normalizedPatients } = useNormalizedPatients(patients);
 
-    const handleDeletePatient = useCallback(
-        async (patientData: any) => {
-            const patient =
-                typeof patientData === 'string'
-                    ? normalizedPatients.find((p) => p?.id === patientData || p?.dni === patientData)
-                    : patientData;
-
-            if (!patient) throw new Error('No se pudo encontrar el paciente');
-            const id = patient?.id;
-            if (!id) throw new Error('No se pudo identificar el paciente (falta ID)');
-
-            await PatientService.deletePatient(id);
-            await refreshPatients();
-        },
-        [refreshPatients, normalizedPatients]
-    );
-
     const headerTitle = titleByPath(location.pathname);
 
     return (
         <ModalsProvider
+            session={session}
             patients={normalizedPatients}
             turnos={turnos}
             addPatient={addPatient}
@@ -125,7 +108,8 @@ export default function AuthedApp({ onLogout, justLoggedIn, onConsumedLogin, ses
                     </main>
                 </div>
 
-                <ModalsRoot patientsLoading={loading} onDeletePatient={handleDeletePatient} session={session} />
+                {/* ModalsRoot requires no external props — all comes from context */}
+                <ModalsRoot />
             </div>
         </ModalsProvider>
     );
