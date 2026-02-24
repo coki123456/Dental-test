@@ -144,7 +144,7 @@ export class AppointmentService {
             if (error) throw error;
 
             const { data: { session: fallbackSession } } = await supabase.auth.getSession();
-            const activeSession = _session || fallbackSession;
+            const activeSession = fallbackSession;
             const googleEvents = await GoogleCalendarService.listEvents(dayStartBound, dayEndBound, activeSession);
 
             const nowTime = new Date();

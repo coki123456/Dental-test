@@ -28,7 +28,7 @@ export default function AddPatientModal({ open: openFlag, onClose, onCreate, onC
         reset,
         formState: { errors, isSubmitting }
     } = useForm<AddPatientInput>({
-        resolver: zodResolver(AddPatientSchema),
+        resolver: zodResolver(AddPatientSchema) as any,
         defaultValues: {
             nombre: '',
             dni: '',

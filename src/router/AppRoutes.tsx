@@ -15,7 +15,7 @@ import { ProtectedRoute } from './ProtectedRoute';
 interface AppRoutesProps {
     normalizedPatients?: any[];
     loading?: boolean;
-    refreshPatients?: () => Promise<void>;
+    refreshPatients?: () => void | Promise<void>;
     session: Session | null;
 }
 

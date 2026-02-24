@@ -32,7 +32,7 @@ export default function EditPatientModal({ open, patient, onClose, onBack }: Edi
         reset,
         formState: { errors, isSubmitting }
     } = useForm<UpdatePatientInput>({
-        resolver: zodResolver(UpdatePatientSchema),
+        resolver: zodResolver(UpdatePatientSchema) as any,
         defaultValues: {
             nombre: '', dni: '', telefono: '', email: '', obraSocial: '',
             numeroAfiliado: '', alergias: '', antecedentes: '', notas: '', estado: 'Activo'
