@@ -89,52 +89,39 @@ export default defineConfig({
                  * meaning this is always faster than one giant bundle.
                  */
                 manualChunks(id: string) {
-                    // ── React core ──────────────────────────────────────────
+                    // ── Core UI (React + Ant Design) ────────────────────────
+                    // Grouping these avoids "Cannot read properties of undefined (reading 'createContext')"
                     if (id.includes('node_modules/react/') ||
                         id.includes('node_modules/react-dom/') ||
                         id.includes('node_modules/react-router-dom/') ||
-                        id.includes('node_modules/scheduler/')) {
-                        return 'vendor-react';
-                    }
-
-                    // ── Supabase SDK ────────────────────────────────────────
-                    if (id.includes('node_modules/@supabase/')) {
-                        return 'vendor-supabase';
-                    }
-
-                    // ── Ant Design UI ───────────────────────────────────────
-                    if (id.includes('node_modules/antd/') ||
+                        id.includes('node_modules/antd/') ||
                         id.includes('node_modules/@ant-design/') ||
-                        id.includes('node_modules/rc-')) {
-                        return 'vendor-antd';
+                        id.includes('node_modules/rc-') ||
+                        id.includes('node_modules/scheduler/')) {
+                        return 'vendor-core';
                     }
 
-                    // ── Lucide icons ────────────────────────────────────────
+                    // ── Data & Auth (Supabase + TanStack) ───────────────────
+                    if (id.includes('node_modules/@supabase/') ||
+                        id.includes('node_modules/@tanstack/')) {
+                        return 'vendor-data';
+                    }
+
+                    // ── Icons (Lucide) ──────────────────────────────────────
                     if (id.includes('node_modules/lucide-react/')) {
                         return 'vendor-icons';
                     }
 
-                    // ── TanStack Query ──────────────────────────────────────
-                    if (id.includes('node_modules/@tanstack/')) {
-                        return 'vendor-query';
-                    }
-
-                    // ── Form / Validation ───────────────────────────────────
+                    // ── Forms (Hook Form + Zod) ─────────────────────────────
                     if (id.includes('node_modules/react-hook-form/') ||
                         id.includes('node_modules/@hookform/') ||
                         id.includes('node_modules/zod/')) {
                         return 'vendor-forms';
                     }
 
-                    // ── i18n / Misc utilities ───────────────────────────────
-                    if (id.includes('node_modules/i18next') ||
-                        id.includes('node_modules/react-i18next')) {
-                        return 'vendor-i18n';
-                    }
-
-                    // Everything else in node_modules → generic vendor chunk
+                    // ── Everything else ─────────────────────────────────────
                     if (id.includes('node_modules/')) {
-                        return 'vendor-misc';
+                        return 'vendor-utils';
                     }
                 },
             },
