@@ -76,7 +76,7 @@ export default function ModalsRoot({ patientsLoading = false, onDeletePatient, s
                 open={showAddModal}
                 onClose={closeAddPatient}
                 onCreate={onCreatedPatient}
-                onCreated={onCreatedPatient}
+                onCreated={undefined}
             />
 
             <ClinicalRecordModal

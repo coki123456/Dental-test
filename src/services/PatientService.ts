@@ -189,14 +189,17 @@ export class PatientService {
   }
 
   /**
-   * Buscar paciente por DNI
+   * Buscar paciente por DNI — normaliza el formato (quita puntos, comas y espacios)
    */
   static async getPatientByDni(dni: string): Promise<any | null> {
     try {
+      // Normalizar: quitar puntos, comas, guiones y espacios para que "12.345.678" matchee "12345678"
+      const cleanDni = String(dni).replace(/[.\s,\-]/g, '').trim();
+
       const { data, error } = await supabase
         .from('patients')
         .select('*')
-        .eq('dni', dni)
+        .eq('dni', cleanDni)
         .maybeSingle();
 
       if (error) {

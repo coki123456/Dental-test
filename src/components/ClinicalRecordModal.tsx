@@ -19,7 +19,8 @@ function isPdf(url = '') {
 
 export default function ClinicalRecordModal({ open, patient, onClose, session }: ClinicalRecordModalProps) {
     const [signedUrl, setSignedUrl] = useState<string | null>(null);
-    const [loading, setLoading] = useState(false);
+    const [loading, setLoading] = useState(false);       // cargando signed URL
+    const [uploading, setUploading] = useState(false);   // subiendo archivo
     const [localRawUrl, setLocalRawUrl] = useState<string | null>(null);
 
     useEffect(() => {
@@ -56,7 +57,8 @@ export default function ClinicalRecordModal({ open, patient, onClose, session }:
         const file = e.target.files?.[0];
         if (!file) return;
         try {
-            setLoading(true);
+            setUploading(true);
+            setSignedUrl(null); // limpiar preview anterior
             const { PatientService } = await import('../services/PatientService');
             const userId = session?.user?.id;
             if (!userId) throw new Error('No hay sesión activa');
@@ -66,11 +68,12 @@ export default function ClinicalRecordModal({ open, patient, onClose, session }:
             }
             const { supabase } = await import('../config/supabaseClient');
             await supabase.from('patients').update({ historia_clinica_url: newPath }).eq('id', patient.id);
+            // Actualizar localRawUrl dispara el useEffect para generar la signed URL
             setLocalRawUrl(newPath);
             window.dispatchEvent(new CustomEvent('patients:refresh'));
             e.target.value = '';
         } catch (err: any) { alert('Error al cambiar el archivo: ' + err.message); }
-        finally { setLoading(false); }
+        finally { setUploading(false); }
     };
 
     const displayUrl = signedUrl;
