@@ -41,7 +41,26 @@ export class GoogleCalendarService {
 
     static async refreshGoogleToken(session?: Session | null): Promise<string | null> {
         try {
-            const refreshToken = this.getRefreshToken(session);
+            let refreshToken = this.getRefreshToken(session);
+
+            // If not in session, try to fetch from database
+            if (!refreshToken) {
+                const { data: { session: currentSession } } = await supabase.auth.getSession();
+                const userId = session?.user?.id || currentSession?.user?.id;
+                
+                if (userId) {
+                    const { data, error } = await supabase
+                        .from('profiles')
+                        .select('google_refresh_token')
+                        .eq('id', userId)
+                        .single();
+                    
+                    if (!error && data?.google_refresh_token) {
+                        refreshToken = data.google_refresh_token;
+                    }
+                }
+            }
+
             if (!refreshToken) return null;
 
             const { data, error } = await supabase.functions.invoke('google-token-refresh', {
@@ -67,8 +86,19 @@ export class GoogleCalendarService {
         session?: Session | null
     ): Promise<Response> {
         let token = this.getProviderToken(session);
+        
+        // If no token, maybe it expired or we need to refresh it anyway
+        if (!token && (session || true)) {
+            console.warn('No Google token available. Attempting refresh...');
+            token = await this.refreshGoogleToken(session);
+        }
+
         if (!token) {
-            return new Response(null, { status: 401, statusText: 'No token available' });
+            return new Response(JSON.stringify({ error: { message: 'No token available after refresh attempt' } }), { 
+                status: 401, 
+                statusText: 'No token available',
+                headers: { 'Content-Type': 'application/json' }
+            });
         }
 
         const headers: Record<string, string> = {

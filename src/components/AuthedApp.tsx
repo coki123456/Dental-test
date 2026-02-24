@@ -45,10 +45,15 @@ export default function AuthedApp({ onLogout, justLoggedIn, onConsumedLogin, ses
     }, [justLoggedIn, navigate, onConsumedLogin]);
 
     // Sync pendientes con Google Calendar al iniciar y periódicamente
+    const sessionRef = React.useRef(session);
+    useEffect(() => {
+        sessionRef.current = session;
+    }, [session]);
+
     useEffect(() => {
         const runSync = async () => {
             try {
-                await AppointmentService.syncPendingAppointments(session);
+                await AppointmentService.syncPendingAppointments(sessionRef.current);
             } catch (e) {
                 console.error('Auto-Sync failed:', e);
             }
@@ -59,7 +64,7 @@ export default function AuthedApp({ onLogout, justLoggedIn, onConsumedLogin, ses
             clearTimeout(initialTimer);
             clearInterval(interval);
         };
-    }, []); // session is intentionally excluded — sync only on mount
+    }, []);
 
     const { patients, loading, error, addPatient, updatePatient, refreshPatients } = usePatients(session);
     const { turnos, refreshTurnos } = useTurnos(null, null, session);

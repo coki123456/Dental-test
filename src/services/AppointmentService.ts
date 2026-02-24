@@ -143,7 +143,9 @@ export class AppointmentService {
 
             if (error) throw error;
 
-            const googleEvents = await GoogleCalendarService.listEvents(dayStartBound, dayEndBound);
+            const { data: { session: fallbackSession } } = await supabase.auth.getSession();
+            const activeSession = _session || fallbackSession;
+            const googleEvents = await GoogleCalendarService.listEvents(dayStartBound, dayEndBound, activeSession);
 
             const nowTime = new Date();
             const minTimeForAppt = new Date(nowTime.getTime() + 30 * 60000);
@@ -440,6 +442,8 @@ ${data.notas ?? 'Sin notas adicionales'}
             if (error) throw error;
             if (!pending || pending.length === 0) return;
 
+            const { data: { session: fallbackSession } } = await supabase.auth.getSession();
+            const activeSession = _session || fallbackSession;
             console.log(`Sincronizando ${pending.length} turnos pendientes...`);
 
             for (const appt of pending) {
@@ -449,7 +453,7 @@ ${data.notas ?? 'Sin notas adicionales'}
                         start_time: appt.start_time,
                         end_time: appt.end_time,
                         notes: appt.notes,
-                    });
+                    }, activeSession);
 
                     if (googleEvent?.id) {
                         await supabase
